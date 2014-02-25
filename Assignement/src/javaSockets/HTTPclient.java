@@ -2,6 +2,7 @@ package javaSockets;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 
 public class HTTPclient {
 	/**
@@ -20,7 +21,10 @@ public class HTTPclient {
 	 * The input byte stream.
 	 */
 	private BufferedReader inFromServer;
-
+	/**
+	 * An arraylist containing pending requests of this client.
+	 */
+	private ArrayList<HTTPMethod> requests;
 	/**
 	 * This constructor initiates an instance of HTTPclient. It creates a local
 	 * connection on port 6789.
@@ -33,7 +37,7 @@ public class HTTPclient {
 				clientSocket.getOutputStream());
 		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
 				clientSocket.getInputStream()));
-
+		this.requests = new ArrayList<HTTPMethod>();
 	}
 
 	public static void main(String argv[]) throws Exception {
@@ -44,12 +48,15 @@ public class HTTPclient {
 	}
 
 	public void runClient() {
-		this.sendCommand(this.getUserCommand());
+		try {
+			String userCommand = this.getUserCommand();
+			this.sendCommand(userCommand);
+		} catch (IllegalCommandException | IOException e) {
+			System.out
+					.println("Oops, something went wrong when processing or trying to send the command.");
+		}
 
-		this.getOutToServer().writeBytes(sentence + '\n');
-		String modifiedSentence = this.getInFromServer().readLine();
-		System.out.println("FROM SERVER: " + modifiedSentence);
-		getClientSocket().close();
+		this.receiveResponse();
 
 	}
 
@@ -61,11 +68,13 @@ public class HTTPclient {
 	}
 
 	/**
-	 * @param inFromUser the inFromUser to set
+	 * @param inFromUser
+	 *            the inFromUser to set
 	 */
 	public void setInFromUser(BufferedReader inFromUser) {
 		this.inFromUser = inFromUser;
 	}
+
 	/**
 	 * @return the clientSocket
 	 */
@@ -74,7 +83,8 @@ public class HTTPclient {
 	}
 
 	/**
-	 * @param clientSocket the clientSocket to set
+	 * @param clientSocket
+	 *            the clientSocket to set
 	 */
 	public void setClientSocket(Socket clientSocket) {
 		this.clientSocket = clientSocket;
@@ -88,7 +98,8 @@ public class HTTPclient {
 	}
 
 	/**
-	 * @param outToServer the outToServer to set
+	 * @param outToServer
+	 *            the outToServer to set
 	 */
 	public void setOutToServer(DataOutputStream outToServer) {
 		this.outToServer = outToServer;
@@ -102,27 +113,158 @@ public class HTTPclient {
 	}
 
 	/**
-	 * @param inFromServer the inFromServer to set
+	 * @param inFromServer
+	 *            the inFromServer to set
 	 */
 	public void setInFromServer(BufferedReader inFromServer) {
 		this.inFromServer = inFromServer;
 	}
+
 	/**
 	 * Reads the user input using the buffered reader. Else return null.
+	 * 
 	 * @return The user input in String type.
 	 */
-	public String getUserCommand(){
+	public String getUserCommand() {
 		try {
 			return this.getInFromUser().readLine();
 		} catch (IOException e) {
-			System.out.println("Error. Something went wrong when reading user input.");
+			System.out
+					.println("Error. Something went wrong when reading user input.");
 			return null;
 		}
-		
-	}
-	
-	public void sendCommand(String userCommand){
-		String HTTPversion = this.parseCommand(userCommand);
+
 	}
 
+	/**
+	 * Sends the given command over the connection associated with this
+	 * HTTPclient.
+	 * 
+	 * @param userCommand
+	 * @throws IOException
+	 */
+	public void sendCommand(String userCommand) throws IllegalCommandException,
+			IOException {
+		String[] userCommandPieces = this.parseCommand(userCommand);
+		if (userCommandPieces == null) {
+			throw new IllegalCommandException();
+		}
+		
+		String approvedCommand = "";
+		for (int i = 0; i < userCommandPieces.length; i++) {
+			approvedCommand += userCommandPieces[i] + " ";
+		}
+		this.getOutToServer().writeBytes(approvedCommand + '\n');
+	}
+
+	/**
+	 * Recieves and processes the response of the server.
+	 */
+	public void receiveResponse() {
+		String modifiedSentence = this.getInFromServer().readLine();
+		System.out.println("FROM SERVER: " + modifiedSentence);
+		getClientSocket().close();
+	}
+
+	/**
+	 * Cuts the given string command in pieces and filters the blank commands
+	 * out of the resulting array of strings. Returns null if and only if the
+	 * command is not valid.
+	 * 
+	 * @param command
+	 *            to split
+	 * @return An array of strings pieces without "blanks"
+	 */
+	public String[] parseCommand(String command) {
+		String[] result = filterBlanks(command.split(" "));
+		if (isValidCommand(result)) {
+			return result;
+		} else {
+			return null;
+		}
+
+	}
+
+	/**
+	 * Returns true if and only if the command is in the correct order and if
+	 * all the elements of the string array are valid.
+	 * 
+	 * @param command
+	 * @return
+	 */
+	private boolean isValidCommand(String[] command) {
+		if (isValidHTTPMethod(command[0]) && isValidURI(command[1])
+				&& isValidPortNumber(command[2])
+				&& isValidHTTPVersion(command[3])) {
+			return true;
+		} else
+			return false;
+	}
+
+	/**
+	 * Returns true if and only if the portNumber is a integer and if it is
+	 * greater than zero.
+	 * 
+	 * @param string
+	 * @return
+	 */
+	private boolean isValidPortNumber(String portNumber) {
+		int parsedPortNumber = Integer.parseInt(portNumber);
+
+		return (parsedPortNumber > 0);
+	}
+
+	/**
+	 * Returns true if and only if the given version is "HTTP/1.0" or
+	 * "HTTP/1.1".
+	 * 
+	 * @param string
+	 * @return
+	 */
+	public static boolean isValidHTTPVersion(String version) {
+		return (version.equals("HTTP/1.0") || version.equals("HTTP/1.1"));
+	}
+
+	/**
+	 * Returns true if and only if the given method is "GET" or "POST" or "HEAD"
+	 * or "PUT".
+	 * 
+	 * @param method
+	 * @return
+	 */
+	public static boolean isValidHTTPMethod(String method) {
+		return (method.equals("GET") || method.equals("POST")
+				|| method.equals("HEAD") || method.equals("PUT"));
+	}
+
+	/**
+	 * Return true if and only if the URI starts with www
+	 * 
+	 * @param uri
+	 * @return
+	 */
+	public static boolean isValidURI(String uri) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	/**
+	 * Iterates over the string array and deletes array elements only containing
+	 * a blank space.
+	 */
+	public static String[] filterBlanks(String[] arrayToFilter) {
+		ArrayList<String> filtered = new ArrayList<String>();
+		for (int i = 0; i < arrayToFilter.length; i++) {
+			if (!arrayToFilter[i].equals(" "))
+				filtered.add(arrayToFilter[i]);
+		}
+		return (String[]) filtered.toArray();
+	}
+	public void addRequest(HTTPMethod request){
+		
+	}
+	public boolean isValidRequest(HTTPMethod request){
+		
+	}
+	public boolean 
 }

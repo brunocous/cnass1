@@ -266,5 +266,7 @@ public class HTTPclient {
 	public boolean isValidRequest(HTTPMethod request){
 		
 	}
-	public boolean 
+	public void removeRequest(HTTPMethod request){
+		
+	}
 }

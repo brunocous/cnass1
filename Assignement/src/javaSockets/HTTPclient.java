@@ -3,6 +3,7 @@ package javaSockets;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import httpmethod.HTTPMethod;
 
 public class HTTPclient {
 	/**
@@ -261,12 +262,22 @@ public class HTTPclient {
 		return (String[]) filtered.toArray();
 	}
 	public void addRequest(HTTPMethod request){
-		
+		if(isValidRequest(request) && !this.hasRequest(request))
+			this.getRequests().add(request);
+	}
+	public boolean hasRequest(HTTPMethod request){
+		return this.getRequests().contains(request);
 	}
 	public boolean isValidRequest(HTTPMethod request){
-		
+		return (HTTPMethod.isValidUri(request.getUri()) 
+				&& HTTPMethod.isValidPort(request.getPort())
+				&& HTTPMethod.isValidHTTPVersion(request.getVersion()));
 	}
 	public void removeRequest(HTTPMethod request){
-		
+		if(this.hasRequest(request))
+			this.getRequests().remove(request);
+	}
+	public ArrayList<HTTPMethod> getRequests(){
+		return this.requests;
 	}
 }

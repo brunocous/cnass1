@@ -1,11 +1,11 @@
-package httpmethod;
+package javaSockets.httpmethod;
 
 import javaSockets.HTTPVersion;
 
-public class Head extends HTTPMethod {
-	private static final String STRINGREPRESENTATION = "HEAD";
+public class Post extends HTTPMethod {
+	private static final String STRINGREPRESENTATION = "POST";
 	
-	public Head(String uri, int port, HTTPVersion version) {
+	public Post(String uri, int port, HTTPVersion version) {
 		super(uri, port, version);
 		// TODO Auto-generated constructor stub
 	}
@@ -19,5 +19,5 @@ public class Head extends HTTPMethod {
 	public String toString(){
 		return getStringRepresentation()+" "+super.toString();
 	}
-
+	
 }

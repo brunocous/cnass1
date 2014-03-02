@@ -1,4 +1,4 @@
-package javaSockets;
+package javaSockets.threadedserver;
 
 import java.io.*;
 import java.net.*;

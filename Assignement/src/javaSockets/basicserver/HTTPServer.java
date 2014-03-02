@@ -1,4 +1,4 @@
-package javaSockets;
+package javaSockets.basicserver;
 
 import java.io.*;
 import java.net.*;

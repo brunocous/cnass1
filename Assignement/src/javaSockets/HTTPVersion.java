@@ -1,4 +1,5 @@
 package javaSockets;
+
 /**
  * An enumeration of http protocol versions.
  * @author Brun

@@ -1,4 +1,4 @@
-package httpmethod;
+package javaSockets.httpmethod;
 
 import javaSockets.HTTPVersion;
 

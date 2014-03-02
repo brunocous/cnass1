@@ -1,9 +1,10 @@
-package javaSockets;
+package javaSockets.client;
 
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
-import httpmethod.*;
+import javaSockets.httpmethod.*;
+
 
 public class HTTPclient {
 	/**

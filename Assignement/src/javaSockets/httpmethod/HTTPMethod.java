@@ -52,14 +52,14 @@ public abstract class HTTPMethod {
 	 * @return
 	 */
 	public static boolean isValidUri(String uri) {
-		if (uri == null) {
-			return false;
-		}
-		String[] splitted = uri.split("/");
-		if ((splitted[0].startsWith("www.") || splitted[0]
-				.startsWith("http://www.")) && splitted[0].endsWith(".com"))
-			return true;
-		else
+//		if (uri == null) {
+//			return false;
+//		}
+//		String[] splitted = uri.split("/");
+//		if ((splitted[0].startsWith("www.") || splitted[0]
+//				.startsWith("http://www.")) && splitted[0].endsWith(".com"))
+//			return true;
+//		else
 			return false;
 
 	}

@@ -45,6 +45,7 @@ public class HTTPclient {
 
 	public static void main(String argv[]) throws Exception {
 		while (true) {
+			
 			HTTPclient client = new HTTPclient();
 			client.runClient();
 		}
@@ -113,6 +114,7 @@ public class HTTPclient {
 	public void receiveResponse() {
 		String modifiedSentence = this.getInFromServer().readLine();
 		System.out.println("FROM SERVER: " + modifiedSentence);
+		
 		getClientSocket().close();
 	}
 

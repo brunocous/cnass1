@@ -68,7 +68,7 @@ public class HTTPclient {
 	 * Sends the given command over the connection associated with this
 	 * HTTPclient.
 	 * 
-	 * @param userCommand
+	 * @param userCommand: The userCommand to send.
 	 * @throws IOException
 	 */
 	public void sendCommand(String userCommand) throws IllegalCommandException,

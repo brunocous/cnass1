@@ -23,10 +23,7 @@ public class HTTPclient {
 	 * The input byte stream.
 	 */
 	private BufferedReader inFromServer;
-	/**
-	 * An arraylist containing pending requests of this client.
-	 */
-	private ArrayList<HTTPMethod> requests;
+	
 
 	/**
 	 * This constructor initiates an instance of HTTPclient. It creates a local

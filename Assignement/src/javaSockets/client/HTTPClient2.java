@@ -12,7 +12,7 @@ import org.jsoup.select.Elements;
 
 
 
-public class neKeerOpnieuwProberen {
+public class HTTPClient2 {
 
 	/**
 	 * Executes the program
@@ -177,7 +177,7 @@ public class neKeerOpnieuwProberen {
 		byte[] buffer = new byte[8 * 1024];
 		
 		for(int i = 0; i< expectedNumObj; i++) {
-			
+			// TODO big time
 		}
 		
 	}
@@ -212,5 +212,7 @@ public class neKeerOpnieuwProberen {
 			sendToServer(command);
 		}
 		receiveEmbeddedObjects(socket, list.size());
+		
+		System.out.println(resultaat);
 	}
 }

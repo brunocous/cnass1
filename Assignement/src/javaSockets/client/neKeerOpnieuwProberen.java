@@ -26,11 +26,12 @@ public class neKeerOpnieuwProberen {
 			String[] commandWords = parseCommand(userCommand);
 			String uri = getUriFromCommand(commandWords);
 			int port = getPortFromCommand(commandWords);
+			String HTTPVersion = getHttpFromCommand(commandWords);
 
 			Socket clientSocket = createSocket(uri, port);
 			sendToServer(clientSocket, userCommand);
 
-			processResponse(receiveResponse(clientSocket));
+			processResponse(receiveResponse(clientSocket), clientSocket, commandWords);
 		}
 		Socket clientSocket = new Socket("localhost", 6789);
 		DataOutputStream outToServer = new DataOutputStream(
@@ -77,6 +78,15 @@ public class neKeerOpnieuwProberen {
 	private static String getUriFromCommand(String[] userCommand) {
 		return userCommand[1];
 	}
+	
+	/**
+	 * Returns the HTTP version from the command of the client
+	 * @param userCommand
+	 * @return
+	 */
+	private static String getHttpFromCommand(String[] userCommand) {
+		return userCommand[3];
+	}
 
 	/**
 	 * Returns the port number of the command of the client
@@ -121,10 +131,8 @@ public class neKeerOpnieuwProberen {
 	 * 
 	 * @throws IOException
 	 */
-	public static void sendToServer(Socket clientSocket, String command)
-			throws IOException {
-		DataOutputStream outToServer = new DataOutputStream(
-				clientSocket.getOutputStream());
+	public static void sendToServer(Socket clientSocket, String command) throws IOException {
+		DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
 		outToServer.writeBytes(command + '\n');
 	}
 
@@ -159,24 +167,50 @@ public class neKeerOpnieuwProberen {
 		return sentence;
 	}
 	
+	/**
+	 * Saves the embedded objects that are requested.
+	 * @param socket
+	 * @throws IOException 
+	 */
+	public static String receiveEmbeddedObjects(Socket socket, int expectedNumObj) throws IOException {
+		InputStream input = socket.getInputStream();
+		byte[] buffer = new byte[8 * 1024];
+		
+		for(int i = 0; i< expectedNumObj; i++) {
+			
+		}
+		
+	}
+	
 
 	/**
 	 * Processes the response of the server and reacts appropriately
 	 * 
 	 * @param response
 	 *            The string that the server responded
+	 * @throws IOException 
 	 */
-	public static void processResponse(String response) {
-		String[] urls = new String[100];
+	public static void processResponse(String response, Socket socket, String[] commandWords) throws IOException {
+		String resultaat = response;
+		if(response.startsWith("HTTP/1.0")) {
+			socket.close();
+		}
 		int i = 0;
-		// TODO implement
 		Document doc = Jsoup.parse(response);
 		Elements list = doc.getElementsByTag("img");
-		for(Element element : list) {
-			
-			urls[i] = element.attr("src");
-			i++;
+		String[] urls = new String[list.size()];
+		for (Element element : list) {
+			String url = element.attr("src");
+			if(url !=  null){
+			urls[i] = url; 
+				i++;
+			}
 		}
-
+		String HTTPVersion = getHttpFromCommand(commandWords);
+		for(String url : urls) {
+			String command = "GET " + url + " " + socket.getPort() + " " + HTTPVersion;
+			sendToServer(command);
+		}
+		
 	}
 }

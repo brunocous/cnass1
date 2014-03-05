@@ -6,7 +6,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class TestKlasse {
-	// dfghjkl
 
 	public static void main(String argv[]) {
 		

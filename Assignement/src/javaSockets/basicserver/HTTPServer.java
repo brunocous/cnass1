@@ -2,6 +2,7 @@ package javaSockets.basicserver;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 //Blabla
 public class HTTPServer {
 	public static void main(String argv[]) throws Exception {
@@ -45,6 +46,19 @@ public class HTTPServer {
 	private static String executeGet(String[] commandPieces) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	/**
+	 * Iterates over the string array and deletes array elements only containing
+	 * a blank space.
+	 */
+	public static String[] filterBlanks(String[] arrayToFilter) {
+		ArrayList<String> filtered = new ArrayList<String>();
+		for (int i = 0; i < arrayToFilter.length; i++) {
+			if (!arrayToFilter[i].equals(" "))
+				filtered.add(arrayToFilter[i]);
+		}
+		return (String[]) filtered.toArray();
 	}
 	
 }

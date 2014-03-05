@@ -68,18 +68,9 @@ public class HTTPclient {
 	 * @param userCommand: The userCommand to send.
 	 * @throws IOException
 	 */
-	public void sendCommand(String userCommand) throws IllegalCommandException,
+	public void sendCommand(String userCommand) throws 
 			IOException {
-		String[] userCommandPieces = this.parseCommand(userCommand);
-		if (userCommandPieces == null) {
-			throw new IllegalCommandException();
-		}
-		this.addNewRequest(userCommandPieces);
-		String approvedCommand = "";
-		for (int i = 0; i < userCommandPieces.length; i++) {
-			approvedCommand += userCommandPieces[i] + " ";
-		}
-		this.getOutToServer().writeBytes(approvedCommand + '\n');
+		this.getOutToServer().writeBytes(userCommand + '\n');
 	}
 
 	private void addNewRequest(String[] userCommandPieces) {
@@ -208,62 +199,6 @@ public class HTTPclient {
 				filtered.add(arrayToFilter[i]);
 		}
 		return (String[]) filtered.toArray();
-	}
-
-	/**
-	 * Adds the given request to the list of request of this client if and only
-	 * if the given request is a valid request and the list of requests doesn't
-	 * contain the given request.
-	 * 
-	 * @param request
-	 */
-	public void addRequest(HTTPMethod request) {
-		if (isValidRequest(request) && !this.hasRequest(request))
-			this.getRequests().add(request);
-	}
-
-	/**
-	 * True if and only if this client has the given request as one of its
-	 * requests.
-	 * 
-	 * @param request
-	 * @return
-	 */
-	public boolean hasRequest(HTTPMethod request) {
-		return this.getRequests().contains(request);
-	}
-
-	/**
-	 * True if and only if the given request has a valid URI and a valid port
-	 * and a valid HTTP Version.
-	 * 
-	 * @param request
-	 * @return
-	 */
-	public boolean isValidRequest(HTTPMethod request) {
-		return (HTTPMethod.isValidUri(request.getUri())
-				&& HTTPMethod.isValidPort(request.getPort()) && HTTPMethod
-					.isValidHTTPVersion(request.getVersion()));
-	}
-
-	/**
-	 * Removes the given request as one of this clients requests if and only if
-	 * this client has the given request as one of its requests.
-	 * 
-	 * @param request
-	 */
-	public void removeRequest(HTTPMethod request) {
-		if (this.hasRequest(request))
-			this.getRequests().remove(request);
-	}
-
-	/**
-	 * Returns the request of this client.
-	 * 
-	 * @return
-	 */
-	public ArrayList<HTTPMethod> getRequests() {
-		return this.requests;
 	}
 
 	/**

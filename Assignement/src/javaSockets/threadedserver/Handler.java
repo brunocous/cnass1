@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+
 import javaSockets.HTTPVersion;
 
 class Handler implements Runnable {
@@ -15,14 +16,21 @@ class Handler implements Runnable {
 		this.setActive(false);
 	}
 
+	/**
+	 * Runs this handler. First the buffered reader reads the stream from the
+	 * client over the socket of this handler. Then the gattered string is
+	 * parsed. Then it is processed. As long as this handler "runs", this
+	 * handler is active.
+	 */
 	@Override
 	public void run() {
+		this.setActive(true);
 		String[] commandPieces = parseCommand(getReader().readLine()
 				.toUpperCase());
 		processCommand(commandPieces);
 		if (Arrays.asList(commandPieces).contains("HTTP/1.0"))
 			quit();
-
+		this.setActive(false);
 		String clientSentence = inFromClient.readLine();
 		System.out.println("Received: " + clientSentence);
 		String capsSentence = clientSentence.toUpperCase() + '\n';
@@ -45,12 +53,60 @@ class Handler implements Runnable {
 			return null;
 	}
 
+	/**
+	 * PRECONDITION: the given command is a valid command.
+	 * 
+	 * Processes the given command and sends a response over the socket of this
+	 * handler.
+	 * 
+	 * @param command
+	 */
 	public void processCommand(String[] command) {
+		assert (isValidCommand(command));
 
+		switch (command[0]) {
+		case "GET":
+			processGet(command);
+		case "POST":
+			processPost(command);
+		case "PUT":
+			processPut(command);
+		case "HEAD":
+			processHead(command);
+		case "QUIT":
+			processQuit(command);
+		}
 	}
 
+	private void processQuit(String[] command) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void processHead(String[] command) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void processPut(String[] command) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void processPost(String[] command) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void processGet(String[] command) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/**
+	 * Sets this handler to inactive.
+	 */
 	public void quit() {
-		this.setSocket(null);
 		this.setActive(false);
 	}
 
@@ -127,23 +183,46 @@ class Handler implements Runnable {
 				&& isValidPort(command[2]) && isValidHttpVersion(command[3]);
 	}
 
+	/**
+	 * True if and only if the given http version is HTTP/1.0 or HTTP/1.1.
+	 * 
+	 * @param string
+	 * @return
+	 */
 	private static boolean isValidHttpVersion(String string) {
 		return (string.equals("HTTP/1.0") || string.equals("HTTP/1.1"));
 	}
 
+	/**
+	 * True if and only the given port is greater than or equal 0, or is smaller
+	 * than or equal to 65535.
+	 * 
+	 * @param string
+	 * @return
+	 */
 	private static boolean isValidPort(String string) {
 		int port = Integer.parseInt(string);
-		return (port >= 0) && (port <=63535);
+		return (port >= 0) && (port <= 63535);
 	}
 
+	/**
+	 * True if and only if the given uri is not null.
+	 * 
+	 * @param string
+	 * @return
+	 */
 	private static boolean isValidUri(String string) {
-		// TODO Auto-generated method stub
-		return false;
+		return (string != null);
 	}
 
+	/**
+	 * True if and only if the given command is GET, PUT, POST, HEAD, QUIT.
+	 * 
+	 * @param string
+	 * @return
+	 */
 	private static boolean isValidHttpCommand(String string) {
-		// TODO Auto-generated method stub
-		return false;
+		String[] validCommands = { "PUT", "GET", "POST", "HEAD", "QUIT" };
+		return Arrays.asList(validCommands).contains(string);
 	}
-
 }

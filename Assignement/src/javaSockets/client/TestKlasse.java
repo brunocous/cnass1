@@ -39,6 +39,6 @@ public class TestKlasse {
 			resul +=el + "\n";
 		}
 		System.out.println(resul);
-		System.out.println("tot hier");
+		System.out.println("tot hier   "+ urls.length);
 	}
 }

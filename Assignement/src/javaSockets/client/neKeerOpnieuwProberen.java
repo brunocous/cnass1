@@ -211,6 +211,6 @@ public class neKeerOpnieuwProberen {
 			String command = "GET " + url + " " + socket.getPort() + " " + HTTPVersion;
 			sendToServer(command);
 		}
-		
+		receiveEmbeddedObjects(socket, list.size());
 	}
 }

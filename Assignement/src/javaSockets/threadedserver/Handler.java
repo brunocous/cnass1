@@ -4,10 +4,15 @@ import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 import javaSockets.HTTPVersion;
 
@@ -87,27 +92,46 @@ class Handler implements Runnable {
 	}
 
 	/**
+	 * Processes the given command and produces response specifique for the
+	 * given command. If the given command is not QUIT, then it returns 500.
+	 * Otherwise the socket of this handler closes.
 	 * 
 	 * @param command
 	 * @return
 	 */
 	private String processQuit(String[] command) {
 		if (!command[0].equals("QUIT")) {
-			return 500;
+			return "" + 500 + getTimeAndDate();
 		}
 		try {
 			this.getSocket().close();
-			return "";
+			return ""+getTimeAndDate();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return command[3] + " " + 500;
+			return "" + 500;
 		}
 
 	}
 
-	private String processHead(String[] command) {
-
+	private String processHead(String[] command) { 
+	if (!command[0].equals("HEAD")) {
+		return "" + 500 + getTimeAndDate();
+	}
+	if(!)
+		Path path = FileSystems.getDefault().getPath(command[1]);
+		//TODO verwijder system out!
+		System.out.println("Dit is het pad in \"path\": "+path + "\nEn Deze de command[1]: "+command[1]);
+		String contentType;
+		
+			contentType = "\nContent-Type: "+ Files.probeContentType(path);
+		
+		String contentLength = "\nContent-Length: " + readFile(command[1]).getBytes(Charset.defaultCharset().toString()).length;
+		System.out.println("type = "+contentType+" length of content= "+contentLength);
+		
+		return 200+ getTimeAndDate() + contentType + contentLength;
+		
+		
 	}
 
 	private String processPut(String[] command) {
@@ -247,19 +271,34 @@ class Handler implements Runnable {
 		String[] validCommands = { "PUT", "GET", "POST", "HEAD", "QUIT" };
 		return Arrays.asList(validCommands).contains(string);
 	}
-/**
- * Reads the file at the given path using the given charset.
- * @param path: The location on the disk of the file.
- * @param encoding: The charset to use to decode the file.
- * @return The string representation of the file at the given path using the given charset.
- * @throws IOException
- */
-	private static String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return encoding.decode(ByteBuffer.wrap(encoded)).toString();
-	}
-	
+
 	/**
+	 * Reads the file at the given path using the standard charset.
 	 * 
+	 * @param path
+	 *            : The location on the disk of the file.
+	 * @return The string representation of the file at the given path using the
+	 *         standard charset.
+	 * @throws IOException
 	 */
+	private static String readFile(String path)
+			throws IOException {
+		byte[] encoded = Files.readAllBytes(Paths.get(path));
+		return Charset.defaultCharset().decode(ByteBuffer.wrap(encoded)).toString();
+	}
+/**
+ * Returns the current time and date in formatted as 'yyyy/MM/dd HH:mm:ss'.
+ * @return
+ */
+	private static String getTimeAndDate(){
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		   Date date = new Date();
+		   return "\n" + dateFormat.format(date);
+	}
+	/**
+	 * Returns the bad request string and the current time and date.
+	 */
+	private static String getBadRequest(){
+		return 400+getTimeAndDate();
+	}
 }

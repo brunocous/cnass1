@@ -1,5 +1,10 @@
 package javaSockets.client;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -40,5 +45,7 @@ public class TestKlasse {
 		}
 		System.out.println(resul);
 		System.out.println("tot hier   "+ urls.length);
+		
+
 	}
 }

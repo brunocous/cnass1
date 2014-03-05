@@ -6,6 +6,8 @@ import java.util.ArrayList;
 
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 
 
@@ -165,20 +167,16 @@ public class neKeerOpnieuwProberen {
 	 *            The string that the server responded
 	 */
 	public static void processResponse(String response) {
+		String[] urls = new String[100];
+		int i = 0;
 		// TODO implement
 		Document doc = Jsoup.parse(response);
-		doc.getElementsByTag("img").attr("src");
-		
-//		String html = "<p>An <a href='http://example.com/'><b>example</b></a> link.</p>";
-//		Document doc = Jsoup.parse(html);
-//		Element link = doc.select("a").first();
-//
-//		String text = doc.body().text(); // "An example link"
-//		String linkHref = link.attr("href"); // "http://example.com/"
-//		String linkText = link.text(); // "example""
-//
-//		String linkOuterH = link.outerHtml(); 
-//		    // "<a href="http://example.com"><b>example</b></a>"
-//		String linkInnerH = link.html(); // "<b>example</b>"
+		Elements list = doc.getElementsByTag("img");
+		for(Element element : list) {
+			
+			urls[i] = element.attr("src");
+			i++;
+		}
+
 	}
 }

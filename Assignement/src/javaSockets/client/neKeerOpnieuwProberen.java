@@ -4,6 +4,12 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 
+import org.jsoup.*;
+import org.jsoup.nodes.Document;
+
+
+
+
 public class neKeerOpnieuwProberen {
 
 	/**
@@ -62,13 +68,14 @@ public class neKeerOpnieuwProberen {
 
 	/**
 	 * Returns the URI from the command of the client
+	 * 
 	 * @param userCommand
 	 * @return
 	 */
 	private static String getUriFromCommand(String[] userCommand) {
 		return userCommand[1];
 	}
-	
+
 	/**
 	 * Returns the port number of the command of the client
 	 */
@@ -77,8 +84,7 @@ public class neKeerOpnieuwProberen {
 		try {
 			value = Integer.parseInt(userCommand[2]);
 			return value;
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			return -1;
 		}
 	}
@@ -97,21 +103,26 @@ public class neKeerOpnieuwProberen {
 
 	/**
 	 * Sends the given command to localhost through port 6789
-	 * @throws IOException 
-	 * @throws UnknownHostException 
+	 * 
+	 * @throws IOException
+	 * @throws UnknownHostException
 	 * 
 	 */
-	public static void sendToServer(String command) throws UnknownHostException, IOException {
+	public static void sendToServer(String command)
+			throws UnknownHostException, IOException {
 		Socket socket = createSocket("localhost", 6789);
 		sendToServer(socket, command);
 	}
 
 	/**
 	 * Sends the given command through the clientsocket to the server.
-	 * @throws IOException 
+	 * 
+	 * @throws IOException
 	 */
-	public static void sendToServer(Socket clientSocket, String command) throws IOException {
-		DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+	public static void sendToServer(Socket clientSocket, String command)
+			throws IOException {
+		DataOutputStream outToServer = new DataOutputStream(
+				clientSocket.getOutputStream());
 		outToServer.writeBytes(command + '\n');
 	}
 
@@ -131,23 +142,43 @@ public class neKeerOpnieuwProberen {
 		Socket clientSocket = new Socket(uri, port);
 		return clientSocket;
 	}
-	
+
 	/**
 	 * Receives and returns the response from the server.
+	 * 
 	 * @param socket
-	 * 				The socket of the connection
+	 *            The socket of the connection
 	 * @return
+	 * @throws IOException
 	 */
-	public String receiveResponse(Socket socket) {
-		// TODO implement methode
+	public static String receiveResponse(Socket socket) throws IOException {
+		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		String sentence = inFromServer.readLine();
+		return sentence;
 	}
 	
+
 	/**
 	 * Processes the response of the server and reacts appropriately
+	 * 
 	 * @param response
-	 * 				The string that the server responded
+	 *            The string that the server responded
 	 */
-	public void processString(String response) {
-		// TODO implemet
+	public static void processResponse(String response) {
+		// TODO implement
+		Document doc = Jsoup.parse(response);
+		doc.getElementsByTag("img").attr("src");
+		
+//		String html = "<p>An <a href='http://example.com/'><b>example</b></a> link.</p>";
+//		Document doc = Jsoup.parse(html);
+//		Element link = doc.select("a").first();
+//
+//		String text = doc.body().text(); // "An example link"
+//		String linkHref = link.attr("href"); // "http://example.com/"
+//		String linkText = link.text(); // "example""
+//
+//		String linkOuterH = link.outerHtml(); 
+//		    // "<a href="http://example.com"><b>example</b></a>"
+//		String linkInnerH = link.html(); // "<b>example</b>"
 	}
 }

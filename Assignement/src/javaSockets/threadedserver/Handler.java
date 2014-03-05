@@ -2,6 +2,10 @@ package javaSockets.threadedserver;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -64,43 +68,61 @@ class Handler implements Runnable {
 	public void processCommand(String[] command) {
 		assert (isValidCommand(command));
 
+		String response = command[3] + " ";
 		switch (command[0]) {
 		case "GET":
-			processGet(command);
+			response += processGet(command);
 		case "POST":
-			processPost(command);
+			response += processPost(command);
 		case "PUT":
-			processPut(command);
+			response += processPut(command);
 		case "HEAD":
-			processHead(command);
+			response += processHead(command);
 		case "QUIT":
-			processQuit(command);
+			response += processQuit(command);
+		default:
+			response += 400;
 		}
+
 	}
 
-	private void processQuit(String[] command) {
-		// TODO Auto-generated method stub
-		
+	/**
+	 * 
+	 * @param command
+	 * @return
+	 */
+	private String processQuit(String[] command) {
+		if (!command[0].equals("QUIT")) {
+			return 500;
+		}
+		try {
+			this.getSocket().close();
+			return "";
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return command[3] + " " + 500;
+		}
+
 	}
 
-	private void processHead(String[] command) {
-		// TODO Auto-generated method stub
-		
+	private String processHead(String[] command) {
+
 	}
 
-	private void processPut(String[] command) {
+	private String processPut(String[] command) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
-	private void processPost(String[] command) {
+	private String processPost(String[] command) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
-	private void processGet(String[] command) {
+	private String processGet(String[] command) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	/**
@@ -225,4 +247,19 @@ class Handler implements Runnable {
 		String[] validCommands = { "PUT", "GET", "POST", "HEAD", "QUIT" };
 		return Arrays.asList(validCommands).contains(string);
 	}
+/**
+ * Reads the file at the given path using the given charset.
+ * @param path: The location on the disk of the file.
+ * @param encoding: The charset to use to decode the file.
+ * @return The string representation of the file at the given path using the given charset.
+ * @throws IOException
+ */
+	private static String readFile(String path, Charset encoding) throws IOException {
+		byte[] encoded = Files.readAllBytes(Paths.get(path));
+		return encoding.decode(ByteBuffer.wrap(encoded)).toString();
+	}
+	
+	/**
+	 * 
+	 */
 }

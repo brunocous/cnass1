@@ -9,9 +9,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-
-
-
 public class HTTPClient2 {
 
 	/**
@@ -26,23 +23,25 @@ public class HTTPClient2 {
 			String[] commandWords = parseCommand(userCommand);
 			String uri = getUriFromCommand(commandWords);
 			int port = getPortFromCommand(commandWords);
-			String HTTPVersion = getHttpFromCommand(commandWords);
+			// String HTTPVersion = getHttpFromCommand(commandWords);
 
 			Socket clientSocket = createSocket(uri, port);
 			sendToServer(clientSocket, userCommand);
 
-			processResponse(receiveResponse(clientSocket), clientSocket, commandWords);
+			processResponse(receiveResponse(clientSocket), clientSocket,
+					commandWords);
 		}
-		Socket clientSocket = new Socket("localhost", 6789);
-		DataOutputStream outToServer = new DataOutputStream(
-				clientSocket.getOutputStream());
-		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
-				clientSocket.getInputStream()));
-		String sentence = inFromUser.readLine();
-		outToServer.writeBytes(sentence + '\n');
-		String modifiedSentence = inFromServer.readLine();
-		System.out.println("FROM SERVER: " + modifiedSentence);
-		clientSocket.close();
+		// Socket clientSocket = new Socket("localhost", 6789);
+		// DataOutputStream outToServer = new DataOutputStream(
+		// clientSocket.getOutputStream());
+		// BufferedReader inFromServer = new BufferedReader(new
+		// InputStreamReader(
+		// clientSocket.getInputStream()));
+		// String sentence = inFromUser.readLine();
+		// outToServer.writeBytes(sentence + '\n');
+		// String modifiedSentence = inFromServer.readLine();
+		// System.out.println("FROM SERVER: " + modifiedSentence);
+		// clientSocket.close();
 	}
 
 	/**
@@ -78,9 +77,10 @@ public class HTTPClient2 {
 	private static String getUriFromCommand(String[] userCommand) {
 		return userCommand[1];
 	}
-	
+
 	/**
 	 * Returns the HTTP version from the command of the client
+	 * 
 	 * @param userCommand
 	 * @return
 	 */
@@ -105,11 +105,13 @@ public class HTTPClient2 {
 	 * Reads the input form the user.
 	 * 
 	 * @return
+	 * @throws IOException
 	 */
-	public static String readUserCommand() {
+	public static String readUserCommand() throws IOException {
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
-		System.out.println(">");
+		return inFromUser.readLine();
+		// System.out.println(">");
 
 	}
 
@@ -131,8 +133,10 @@ public class HTTPClient2 {
 	 * 
 	 * @throws IOException
 	 */
-	public static void sendToServer(Socket clientSocket, String command) throws IOException {
-		DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+	public static void sendToServer(Socket clientSocket, String command)
+			throws IOException {
+		DataOutputStream outToServer = new DataOutputStream(
+				clientSocket.getOutputStream());
 		outToServer.writeBytes(command + '\n');
 	}
 
@@ -162,57 +166,93 @@ public class HTTPClient2 {
 	 * @throws IOException
 	 */
 	public static String receiveResponse(Socket socket) throws IOException {
-		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
+				socket.getInputStream()));
 		String sentence = inFromServer.readLine();
 		return sentence;
 	}
-	
+
 	/**
-	 * Saves the embedded objects that are requested.
+	 * Returns the embedded objects that are requested.
+	 * 
 	 * @param socket
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	public static String receiveEmbeddedObjects(Socket socket, int expectedNumObj) throws IOException {
+	public static String receiveEmbeddedObjects0(Socket socket) throws IOException {
 		InputStream input = socket.getInputStream();
-		byte[] buffer = new byte[8 * 1024];
-		
-		for(int i = 0; i< expectedNumObj; i++) {
-			// TODO big time
-		}
-		
+		return input.re
+//		byte[] buffer = new byte[8 * 1024];
+//		for (int i = 0; i < expectedNumObj; i++) {
+//			// TODO big time
+//		}
+
 	}
 	
+	/**
+	 * 
+	 * @param socket
+	 * @param size
+	 * @return
+	 */
+	public static String receiveEmbeddedObjects1(Socket socket, int size) {
+		// TODO
+		
+	}
 
 	/**
 	 * Processes the response of the server and reacts appropriately
 	 * 
 	 * @param response
 	 *            The string that the server responded
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public static void processResponse(String response, Socket socket, String[] commandWords) throws IOException {
-		String resultaat = response;
+		int port = socket.getPort();
+		System.out.println(response);
 		if(response.startsWith("HTTP/1.0")) {
 			socket.close();
+			String[] urls = getUrls(response);
+			for(String url : urls) {
+				Socket newSocket = createSocket(url, port);
+				String command = "GET " + url + " " + newSocket.getPort() + " " + getHttpFromCommand(commandWords);
+				sendToServer(newSocket, command);
+				System.out.println("Image requested.");
+				String image = receiveEmbeddedObjects0(newSocket);
+				System.out.println(image);
+				newSocket.close();
+			}
 		}
+		else if(response.startsWith("HTTP/1.1")) {
+			String[] urls = getUrls(response);
+			int size = urls.length;
+			for(String url : urls) {
+				String command = "GET " + url + " " + socket.getPort() + " " + getHttpFromCommand(commandWords);
+				sendToServer(socket, command);
+				System.out.println("Image requested.");
+			}
+			String imageString = receiveEmbeddedObjects1(socket, size);
+			System.out.println(imageString);
+		}
+	}
+
+	/**
+	 * Returns an array with the urls of the embedded images of the given response from the server.
+	 * @param response
+	 * @return
+	 */
+	private static String[] getUrls(String response) {
 		int i = 0;
 		Document doc = Jsoup.parse(response);
 		Elements list = doc.getElementsByTag("img");
-		String[] urls = new String[list.size()];
+		int numberObjects = list.size();
+		String[] urls = new String[numberObjects];
 		for (Element element : list) {
 			String url = element.attr("src");
-			if(url !=  null){
-			urls[i] = url; 
+			if (url != null) {
+				urls[i] = url;
 				i++;
 			}
 		}
-		String HTTPVersion = getHttpFromCommand(commandWords);
-		for(String url : urls) {
-			String command = "GET " + url + " " + socket.getPort() + " " + HTTPVersion;
-			sendToServer(command);
-		}
-		receiveEmbeddedObjects(socket, list.size());
-		
-		System.out.println(resultaat);
+		return urls;
 	}
 }

@@ -179,13 +179,10 @@ public class HTTPClient2 {
 	 * @throws IOException
 	 */
 	public static String receiveEmbeddedObjects0(Socket socket) throws IOException {
-		InputStream input = socket.getInputStream();
-		return input.re
-//		byte[] buffer = new byte[8 * 1024];
-//		for (int i = 0; i < expectedNumObj; i++) {
-//			// TODO big time
-//		}
-
+		DataInputStream dis = new DataInputStream(socket.getInputStream());
+		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(dis));
+		String sentence = inFromServer.readLine();
+		return sentence;
 	}
 	
 	/**
@@ -195,7 +192,12 @@ public class HTTPClient2 {
 	 * @return
 	 */
 	public static String receiveEmbeddedObjects1(Socket socket, int size) {
-		// TODO
+		
+//		byte[] buffer = new byte[8 * 1024];
+//		for (int i = 0; i < expectedNumObj; i++) {
+//			// TODO big time
+//		}
+		
 		
 	}
 
@@ -218,6 +220,7 @@ public class HTTPClient2 {
 				sendToServer(newSocket, command);
 				System.out.println("Image requested.");
 				String image = receiveEmbeddedObjects0(newSocket);
+				// TODO het wegschrijven op schijf
 				System.out.println(image);
 				newSocket.close();
 			}

@@ -12,7 +12,7 @@ public class HTTPthreadedServer {
 	/**
 	 * The list of handlers, aka the thread pool.
 	 */
-	private ArrayList<Handler> threadPool;
+	private ArrayList<Handler> threadPool = new ArrayList<Handler>();
 	/**
 	 * The socket of this server.
 	 */
@@ -92,7 +92,7 @@ public class HTTPthreadedServer {
 	 * Adds a new handler to the pool of this server and assigns the given
 	 * connection to it.
 	 */
-	public Handler makeAndAssignHandler(Socket connection) {
+	private Handler makeAndAssignHandler(Socket connection) {
 		Handler newHandler = new Handler();
 		newHandler.acceptConnection(connection);
 		this.getThreadPool().add(newHandler);

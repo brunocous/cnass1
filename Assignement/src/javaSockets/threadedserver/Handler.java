@@ -14,11 +14,13 @@ import java.util.Date;
 
 import org.apache.commons.io.IOUtils;
 
-
 class Handler implements Runnable {
 	private Socket socket;
 	private boolean isActive;
 
+	/**
+	 * Creates a new inactive handler with no socket.
+	 */
 	public Handler() {
 		this.setSocket(null);
 		this.setActive(false);
@@ -38,7 +40,7 @@ class Handler implements Runnable {
 					.toUpperCase());
 			processCommand(commandPieces);
 			if (Arrays.asList(commandPieces).contains("HTTP/1.0"))
-			this.quit();
+				this.quit();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -56,45 +58,55 @@ class Handler implements Runnable {
 	public String[] parseCommand(String command) {
 		String[] pieces = filterBlanks(command.split(" "));
 		if (isValidCommand(pieces)) {
+			if (pieces[1].startsWith("LOCALHOST")) {
+				pieces[1] = pieces[1].replaceFirst("LOCALHOST", "");
+			}
 			return pieces;
 		} else
 			return null;
 	}
 
 	/**
-	 * PRECONDITION: the given command is a valid command.
 	 * 
 	 * Processes the given command and sends a response over the socket of this
 	 * handler.
 	 * 
+	 * If the given command is null or if, and only if, the first command is not
+	 * a valid http command, then a bad request response is send to the client.
+	 * 
 	 * @param command
 	 * @throws IOException
+	 *             : If an error occurs during processing the command, then an
+	 *             internal error response is send to the client.
 	 */
 	public void processCommand(String[] command) throws IOException {
-		assert (isValidCommand(command));
-
 		String response = command[3] + " ";
 		boolean isValidGet = false;
-		try {
-			switch (command[0]) {
-			case "GET":
-				String result = processGet(command);
-				response += result;
-				if (result.startsWith("200"))
-					isValidGet = true;
-			case "POST":
-				response += processPost(command);
-			case "PUT":
-				response += processPut(command);
-			case "HEAD":
-				response += processHead(command);
-			case "QUIT":
-				response += processQuit(command);
-			default:
-				response += 400;
+
+		if (command == null) {
+			response = getBadRequest();
+		} else {
+			try {
+				switch (command[0]) {
+				case "GET":
+					String result = processGet(command);
+					response += result;
+					if (result.startsWith("200"))
+						isValidGet = true;
+				case "POST":
+					response += processPost(command);
+				case "PUT":
+					response += processPut(command);
+				case "HEAD":
+					response += processHead(command);
+				case "QUIT":
+					response += processQuit(command);
+				default:
+					response += getBadRequest();
+				}
+			} catch (IOException e) {
+				response += "500" + getTimeAndDate();
 			}
-		} catch (IOException e) {
-			response += "500" + getTimeAndDate();
 		}
 
 		DataOutputStream outToClient = new DataOutputStream(this.getSocket()
@@ -108,16 +120,16 @@ class Handler implements Runnable {
 			while ((i = inFromFile.read()) > -1) {
 				outToClient.write(i);
 			}
-			outToClient.close();
 			inFromFile.close();
 		}
+		outToClient.close();
 
 	}
 
 	/**
-	 * Processes the given command and produces response specifique for the
-	 * given command. If the given command is not QUIT, then it returns 500.
-	 * Otherwise the socket of this handler closes.
+	 * Processes the given command and produces response specific for the given
+	 * command. If the given command is not QUIT, then it returns 500. Otherwise
+	 * the socket of this handler closes.
 	 * 
 	 * @param command
 	 * @return
@@ -130,13 +142,20 @@ class Handler implements Runnable {
 			this.getSocket().close();
 			return "" + getTimeAndDate();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			return "" + 500;
 		}
 
 	}
 
+	/**
+	 * Processes the given command. If the given command is not a HEAD, then an
+	 * internal error response is returned. Otherwise the date, content type and
+	 * content length is returned.
+	 * 
+	 * @param command
+	 * @return
+	 * @throws IOException
+	 */
 	private static String processHead(String[] command) throws IOException {
 		if (!command[0].equals("HEAD")) {
 			return "" + 500 + getTimeAndDate();
@@ -150,18 +169,40 @@ class Handler implements Runnable {
 
 	}
 
+	/**
+	 * If the given command is not a PUT command, then an internal error
+	 * response is returned. Otherwise it will store the remaining substrings of
+	 * the given command in a file, that will be put in the path specified in
+	 * the command. A response of success is then returned.
+	 * 
+	 * @param command
+	 * @return
+	 * @throws IOException
+	 */
 	private static String processPut(String[] command) throws IOException {
 		if (!command[0].equals("PUT")) {
 			return "" + 500 + getTimeAndDate();
 		}
 		File file = new File(generatePath(command[1]).toString());
 		Writer output = new BufferedWriter(new FileWriter(file));
-		output.write(command[4]);
+		for (int i = 4; i < command.length; i++) {
+			output.write(command[i]);
+		}
 		output.close();
 
 		return 200 + getTimeAndDate();
 	}
 
+	/**
+	 * If the given command is not a POST command, then an internal error
+	 * response is returned. Otherwise it will store the remaining substring of
+	 * the given command in a file, that will be put in the path specified in
+	 * the command. A response of success is then returned.
+	 * 
+	 * @param command
+	 * @return
+	 * @throws IOException
+	 */
 	private static String processPost(String[] command) throws IOException {
 		if (!command[0].equals("POST")) {
 			return "" + 500 + getTimeAndDate();
@@ -175,6 +216,15 @@ class Handler implements Runnable {
 
 	}
 
+	/**
+	 * If the given command is not a POST command, then an internal error
+	 * response is returned. Otherwise the header of the requested item on the
+	 * requested path. If that fails, then a bad request response is returned.
+	 * 
+	 * @param command
+	 * @return
+	 * @throws IOException
+	 */
 	private static String processGet(String[] command) throws IOException {
 		if (!command[0].equals("GET")) {
 			return "" + 500 + getTimeAndDate();
@@ -194,16 +244,22 @@ class Handler implements Runnable {
 		this.setSocket(null);
 	}
 
+	/**
+	 * returns the socket of this handler.
+	 * 
+	 * @return
+	 */
 	public Socket getSocket() {
 		return socket;
 	}
 
+	/**
+	 * Sets the socket of this handler to the given socket.
+	 * 
+	 * @param socket
+	 */
 	public void setSocket(Socket socket) {
 		this.socket = socket;
-	}
-
-	public boolean isValidSocket(Socket socket) {
-		return false;
 	}
 
 	/**
@@ -348,20 +404,22 @@ class Handler implements Runnable {
 		String prefix = "C:\\Users\\Brun\\git\\cnass1\\Assignement\\src\\javaSockets\\threadedserver\\";
 		return FileSystems.getDefault().getPath(prefix + path);
 	}
+
 	/**
 	 * True if and only if this handler is not active and has no socket.
 	 */
-	public boolean canAcceptConnection(){
+	public boolean canAcceptConnection() {
 		return (this.getSocket() == null && !this.isActive());
 	}
+
 	/**
 	 * Sets the given connection as its socket.
 	 * 
 	 * PRECONDITION: this handler can accept a connection.
 	 */
-	public void acceptConnection(Socket connection){
-		assert(this.canAcceptConnection());
-		
+	public void acceptConnection(Socket connection) {
+		assert (this.canAcceptConnection());
+
 		this.setSocket(connection);
 	}
 }

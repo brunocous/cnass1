@@ -2,12 +2,10 @@ package javaSockets.threadedserver;
 
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,14 +14,13 @@ import java.util.Date;
 
 import org.apache.commons.io.IOUtils;
 
-import javaSockets.HTTPVersion;
 
 class Handler implements Runnable {
 	private Socket socket;
 	private boolean isActive;
 
-	public Handler(Socket socket) {
-		this.setSocket(socket);
+	public Handler() {
+		this.setSocket(null);
 		this.setActive(false);
 	}
 
@@ -41,8 +38,7 @@ class Handler implements Runnable {
 					.toUpperCase());
 			processCommand(commandPieces);
 			if (Arrays.asList(commandPieces).contains("HTTP/1.0"))
-				quit();
-			this.setActive(false);
+			this.quit();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -195,6 +191,7 @@ class Handler implements Runnable {
 	 */
 	public void quit() {
 		this.setActive(false);
+		this.setSocket(null);
 	}
 
 	public Socket getSocket() {
@@ -350,5 +347,21 @@ class Handler implements Runnable {
 	private static Path generatePath(String path) {
 		String prefix = "C:\\Users\\Brun\\git\\cnass1\\Assignement\\src\\javaSockets\\threadedserver\\";
 		return FileSystems.getDefault().getPath(prefix + path);
+	}
+	/**
+	 * True if and only if this handler is not active and has no socket.
+	 */
+	public boolean canAcceptConnection(){
+		return (this.getSocket() == null && !this.isActive());
+	}
+	/**
+	 * Sets the given connection as its socket.
+	 * 
+	 * PRECONDITION: this handler can accept a connection.
+	 */
+	public void acceptConnection(Socket connection){
+		assert(this.canAcceptConnection());
+		
+		this.setSocket(connection);
 	}
 }

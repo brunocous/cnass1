@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
+import org.apache.commons.io.IOUtils;
+
 import javaSockets.HTTPVersion;
 
 class Handler implements Runnable {
@@ -33,17 +35,18 @@ class Handler implements Runnable {
 	 */
 	@Override
 	public void run() {
-		this.setActive(true);
-		String[] commandPieces = parseCommand(getReader().readLine()
-				.toUpperCase());
-		processCommand(commandPieces);
-		if (Arrays.asList(commandPieces).contains("HTTP/1.0"))
-			quit();
-		this.setActive(false);
-		String clientSentence = inFromClient.readLine();
-		System.out.println("Received: " + clientSentence);
-		String capsSentence = clientSentence.toUpperCase() + '\n';
-		outToClient.writeBytes(capsSentence);
+		try {
+			this.setActive(true);
+			String[] commandPieces = parseCommand(getReader().readLine()
+					.toUpperCase());
+			processCommand(commandPieces);
+			if (Arrays.asList(commandPieces).contains("HTTP/1.0"))
+				quit();
+			this.setActive(false);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -69,26 +72,49 @@ class Handler implements Runnable {
 	 * handler.
 	 * 
 	 * @param command
+	 * @throws IOException
 	 */
-	public void processCommand(String[] command) {
+	public void processCommand(String[] command) throws IOException {
 		assert (isValidCommand(command));
 
 		String response = command[3] + " ";
-		switch (command[0]) {
-		case "GET":
-			response += processGet(command);
-		case "POST":
-			response += processPost(command);
-		case "PUT":
-			response += processPut(command);
-		case "HEAD":
-			response += processHead(command);
-		case "QUIT":
-			response += processQuit(command);
-		default:
-			response += 400;
+		boolean isValidGet = false;
+		try {
+			switch (command[0]) {
+			case "GET":
+				String result = processGet(command);
+				response += result;
+				if (result.startsWith("200"))
+					isValidGet = true;
+			case "POST":
+				response += processPost(command);
+			case "PUT":
+				response += processPut(command);
+			case "HEAD":
+				response += processHead(command);
+			case "QUIT":
+				response += processQuit(command);
+			default:
+				response += 400;
+			}
+		} catch (IOException e) {
+			response += "500" + getTimeAndDate();
 		}
-		
+
+		DataOutputStream outToClient = new DataOutputStream(this.getSocket()
+				.getOutputStream());
+		outToClient.writeBytes(response);
+
+		if (isValidGet) {
+			int i;
+			FileInputStream inFromFile = new FileInputStream(generatePath(
+					command[1]).toString());
+			while ((i = inFromFile.read()) > -1) {
+				outToClient.write(i);
+			}
+			outToClient.close();
+			inFromFile.close();
+		}
 
 	}
 
@@ -106,7 +132,7 @@ class Handler implements Runnable {
 		}
 		try {
 			this.getSocket().close();
-			return ""+getTimeAndDate();
+			return "" + getTimeAndDate();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -115,39 +141,53 @@ class Handler implements Runnable {
 
 	}
 
-	private String processHead(String[] command) { 
-	if (!command[0].equals("HEAD")) {
-		return "" + 500 + getTimeAndDate();
-	}
-	if(!)
-		Path path = FileSystems.getDefault().getPath(command[1]);
-		//TODO verwijder system out!
-		System.out.println("Dit is het pad in \"path\": "+path + "\nEn Deze de command[1]: "+command[1]);
-		String contentType;
-		
-			contentType = "\nContent-Type: "+ Files.probeContentType(path);
-		
-		String contentLength = "\nContent-Length: " + readFile(command[1]).getBytes(Charset.defaultCharset().toString()).length;
-		System.out.println("type = "+contentType+" length of content= "+contentLength);
-		
-		return 200+ getTimeAndDate() + contentType + contentLength;
-		
-		
-	}
+	private static String processHead(String[] command) throws IOException {
+		if (!command[0].equals("HEAD")) {
+			return "" + 500 + getTimeAndDate();
+		}
+		Path path = generatePath(command[1]);
+		String contentType = "\nContent-Type: " + Files.probeContentType(path);
+		String contentLength = "\nContent-Length: "
+				+ readFile(path).getBytes(Charset.defaultCharset().toString()).length;
 
-	private String processPut(String[] command) {
-		// TODO Auto-generated method stub
+		return 200 + getTimeAndDate() + contentType + contentLength;
 
 	}
 
-	private String processPost(String[] command) {
-		// TODO Auto-generated method stub
+	private static String processPut(String[] command) throws IOException {
+		if (!command[0].equals("PUT")) {
+			return "" + 500 + getTimeAndDate();
+		}
+		File file = new File(generatePath(command[1]).toString());
+		Writer output = new BufferedWriter(new FileWriter(file));
+		output.write(command[4]);
+		output.close();
+
+		return 200 + getTimeAndDate();
+	}
+
+	private static String processPost(String[] command) throws IOException {
+		if (!command[0].equals("POST")) {
+			return "" + 500 + getTimeAndDate();
+		}
+		File file = new File(generatePath(command[1]).toString());
+		Writer output = new BufferedWriter(new FileWriter(file));
+		output.write(command[4]);
+		output.close();
+
+		return 200 + getTimeAndDate();
 
 	}
 
-	private String processGet(String[] command) {
-		// TODO Auto-generated method stub
-
+	private static String processGet(String[] command) throws IOException {
+		if (!command[0].equals("GET")) {
+			return "" + 500 + getTimeAndDate();
+		}
+		String result = processHead(command);
+		if (result.startsWith("200")) {
+			return result;
+		} else
+			return "400" + getTimeAndDate();
 	}
 
 	/**
@@ -282,24 +322,33 @@ class Handler implements Runnable {
 	 *         standard charset.
 	 * @throws IOException
 	 */
-	private static String readFile(String path)
-			throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return Charset.defaultCharset().decode(ByteBuffer.wrap(encoded)).toString();
+	private static String readFile(Path path) throws IOException {
+		return IOUtils.toString(Files.newInputStream(path));
 	}
-/**
- * Returns the current time and date in formatted as 'yyyy/MM/dd HH:mm:ss'.
- * @return
- */
-	private static String getTimeAndDate(){
+
+	/**
+	 * Returns the current time and date in formatted as 'yyyy/MM/dd HH:mm:ss'.
+	 * 
+	 * @return
+	 */
+	private static String getTimeAndDate() {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		   Date date = new Date();
-		   return "\n" + dateFormat.format(date);
+		Date date = new Date();
+		return "\n" + dateFormat.format(date);
 	}
+
 	/**
 	 * Returns the bad request string and the current time and date.
 	 */
-	private static String getBadRequest(){
-		return 400+getTimeAndDate();
+	private static String getBadRequest() {
+		return 400 + getTimeAndDate();
+	}
+
+	/**
+	 * Generates a Path object from the given path. A prefix is added.
+	 */
+	private static Path generatePath(String path) {
+		String prefix = "C:\\Users\\Brun\\git\\cnass1\\Assignement\\src\\javaSockets\\threadedserver\\";
+		return FileSystems.getDefault().getPath(prefix + path);
 	}
 }

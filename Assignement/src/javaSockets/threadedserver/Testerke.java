@@ -21,7 +21,7 @@ public class Testerke {
 	public static void main(String arg[])throws Exception{
 String prefix = "C:\\Users\\Brun\\git\\cnass1\\Assignement\\src\\javaSockets\\threadedserver\\";
 System.out.println(prefix);
-		Path path = FileSystems.getDefault().getPath(prefix + "smiley.gif");
+		Path path = FileSystems.getDefault().getPath(prefix + "SMILEY.GIF");
 		//TODO verwijder system out!
 		System.out.println("Dit is het pad in \"path\": "+path );
 		String contentType;

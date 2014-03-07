@@ -178,29 +178,13 @@ public class HTTPClient2 {
 	 * @param socket
 	 * @throws IOException
 	 */
-	public static String receiveEmbeddedObjects0(Socket socket) throws IOException {
+	public static String receiveEmbeddedObjects(Socket socket) throws IOException {
 		DataInputStream dis = new DataInputStream(socket.getInputStream());
 		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(dis));
 		String sentence = inFromServer.readLine();
 		return sentence;
 	}
 	
-	/**
-	 * 
-	 * @param socket
-	 * @param size
-	 * @return
-	 */
-	public static String receiveEmbeddedObjects1(Socket socket, int size) {
-		
-//		byte[] buffer = new byte[8 * 1024];
-//		for (int i = 0; i < expectedNumObj; i++) {
-//			// TODO big time
-//		}
-		
-		
-	}
-
 	/**
 	 * Processes the response of the server and reacts appropriately
 	 * 
@@ -209,32 +193,38 @@ public class HTTPClient2 {
 	 * @throws IOException
 	 */
 	public static void processResponse(String response, Socket socket, String[] commandWords) throws IOException {
-		int port = socket.getPort();
 		System.out.println(response);
 		if(response.startsWith("HTTP/1.0")) {
 			socket.close();
 			String[] urls = getUrls(response);
+			int i = 0;
 			for(String url : urls) {
-				Socket newSocket = createSocket(url, port);
+				Socket newSocket = createSocket(url, socket.getPort());
 				String command = "GET " + url + " " + newSocket.getPort() + " " + getHttpFromCommand(commandWords);
 				sendToServer(newSocket, command);
 				System.out.println("Image requested.");
-				String image = receiveEmbeddedObjects0(newSocket);
-				// TODO het wegschrijven op schijf
-				System.out.println(image);
+				String image = receiveEmbeddedObjects(newSocket);
+				PrintWriter out = new PrintWriter("image" + i + ".txt");
+				i++;
+				out.println(image);
+				out.close();
+				// System.out.println(image);
 				newSocket.close();
 			}
 		}
 		else if(response.startsWith("HTTP/1.1")) {
 			String[] urls = getUrls(response);
-			int size = urls.length;
+			int j = 0;
 			for(String url : urls) {
 				String command = "GET " + url + " " + socket.getPort() + " " + getHttpFromCommand(commandWords);
 				sendToServer(socket, command);
 				System.out.println("Image requested.");
+				String imageString = receiveEmbeddedObjects(socket);
+				PrintWriter out = new PrintWriter("image" + j + ".txt");
+				out.println(imageString);
+				out.close();
+				// System.out.println(imageString);
 			}
-			String imageString = receiveEmbeddedObjects1(socket, size);
-			System.out.println(imageString);
 		}
 	}
 

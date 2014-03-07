@@ -22,10 +22,11 @@ public class HTTPClient2 {
 			String userCommand = readUserCommand();
 			String[] commandWords = parseCommand(userCommand);
 			String uri = getUriFromCommand(commandWords);
+			String host = uri.split("/")[0];
 			int port = getPortFromCommand(commandWords);
+			
 			// String HTTPVersion = getHttpFromCommand(commandWords);
-
-			Socket clientSocket = createSocket(uri, port);
+			Socket clientSocket = createSocket(host, port);
 			sendToServer(clientSocket, userCommand);
 
 			processResponse(receiveResponse(clientSocket), clientSocket,
@@ -65,7 +66,7 @@ public class HTTPClient2 {
 			if (!arrayToFilter[i].equals(" "))
 				filtered.add(arrayToFilter[i]);
 		}
-		return (String[]) filtered.toArray();
+		return filtered.toArray(new String[filtered.size()]);
 	}
 
 	/**

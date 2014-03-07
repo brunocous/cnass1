@@ -35,8 +35,11 @@ class Handler implements Runnable {
 	@Override
 	public void run() {
 		try {
+			int i = 0;
 			while (true) {
 				this.setActive(true);
+				// TODO
+				System.out.println("Zoveelste keer run in handler: " + i);
 				String[] commandPieces = parseCommand(getReader().readLine()
 						.toUpperCase());
 				processCommand(commandPieces);
@@ -58,7 +61,8 @@ class Handler implements Runnable {
 	 * methods checks if the sliced command has a valid number of commands. If
 	 * the given command is null, then null is returned.
 	 * 
-	 * Only accepted combinations: method uri port version || method uri version || method uri
+	 * Only accepted combinations: method uri port version || method uri version
+	 * || method uri
 	 * 
 	 * @return
 	 */
@@ -69,10 +73,14 @@ class Handler implements Runnable {
 			return null;
 		}
 		String[] pieces = filterBlanks(command.split(" "));
-
+		System.out.println("geparsed command = ");
+		for (String s : pieces) {
+			System.out.println(s);
+		}
 		if (howManyValidCommandPieces(pieces) != -1) {
 			if (pieces[1].startsWith("LOCALHOST")) {
 				pieces[1] = pieces[1].replaceFirst("LOCALHOST/", "");
+				pieces[1] = pieces[1].replaceFirst("LOCALHOST", "");
 			}
 			return pieces;
 		} else
@@ -96,23 +104,41 @@ class Handler implements Runnable {
 	public void processCommand(String[] command) throws IOException {
 		String response = "";
 		boolean isValidGet = false;
-
+		// TODO
+		System.out.println("Volgende zal geprocessed worden: ");
+		for (String s : command) {
+			System.out.println(s);
+		}
 		if (command == null) {
 			response = getBadRequest();
 		} else {
-			switch(howManyValidCommandPieces(command)){
-			case 2: response = "HTTP/1.1"+ " ";
-			case 3: response = command[2] + " ";
-			case 4: response = command[3] + " ";
+			int i = howManyValidCommandPieces(command);
+			// TODO
+			System.out.println(" number of command: " + i);
+			if (i == 2) {
+				System.out.println("Ik zit in case 2");
+				response = "HTTP/1.1" + " ";
+			}
+			if (i == 3) {
+				System.out.println("Ik zit in case 3");
+				response = command[2] + " ";
+			}
+			if (i == 4) {
+				System.out.println("Ik zit in case 4");
+				response = command[3] + " ";
 			}
 			try {
-				switch (command[0]) {
-				case "GET":
+				if(command[0].equals("GET")){
+					if (command[1].equals("") || command[2].equals("\\")
+							|| command[2].equals("/")) {
+						command[1] = "INDEX.HTML";
+					}
 					String result = processGet(command);
 					response += result;
-					if (result.startsWith("200"))
+					if (result.startsWith("200")) {
 						isValidGet = true;
-				case "POST":
+					}
+				}else if(command[0].)
 					response += processPost(command);
 				case "PUT":
 					response += processPut(command);
@@ -183,7 +209,6 @@ class Handler implements Runnable {
 		String contentType = "\nContent-Type: " + Files.probeContentType(path);
 		String contentLength = "\nContent-Length: "
 				+ readFile(path).getBytes(Charset.defaultCharset().toString()).length;
-
 		return 200 + getTimeAndDate() + contentType + contentLength;
 
 	}
@@ -370,12 +395,12 @@ class Handler implements Runnable {
 	 * or 4 pieces.
 	 */
 	private static int howManyValidCommandPieces(String[] command) {
-		if (isValid2PiecedCommand(command))
-			return 2;
-		if (isValid3PiecedCommand(command))
-			return 3;
-		if (isValid4PiecedCommand(command))
+		if (command.length >= 4 && isValid4PiecedCommand(command))
 			return 4;
+		if (command.length >= 3 && isValid3PiecedCommand(command))
+			return 3;
+		if (command.length >= 2 && isValid2PiecedCommand(command))
+			return 2;
 		else
 			return -1;
 	}

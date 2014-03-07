@@ -19,6 +19,7 @@ public class HTTPClient2 {
 	 */
 	public static void main(String argv[]) throws Exception {
 		while (true) {
+			System.out.println("Welcome to the HTTP client, \n >");
 			String userCommand = readUserCommand();
 			String[] commandWords = parseCommand(userCommand);
 			String uri = getUriFromCommand(commandWords);
@@ -109,11 +110,8 @@ public class HTTPClient2 {
 	 * @throws IOException
 	 */
 	public static String readUserCommand() throws IOException {
-		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(
-				System.in));
+		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		return inFromUser.readLine();
-		// System.out.println(">");
-
 	}
 
 	/**
@@ -123,8 +121,7 @@ public class HTTPClient2 {
 	 * @throws UnknownHostException
 	 * 
 	 */
-	public static void sendToServer(String command)
-			throws UnknownHostException, IOException {
+	public static void sendToServer(String command) throws UnknownHostException, IOException {
 		Socket socket = createSocket("localhost", 6789);
 		sendToServer(socket, command);
 	}
@@ -134,10 +131,14 @@ public class HTTPClient2 {
 	 * 
 	 * @throws IOException
 	 */
-	public static void sendToServer(Socket clientSocket, String command)
-			throws IOException {
-		DataOutputStream outToServer = new DataOutputStream(
-				clientSocket.getOutputStream());
+	public static void sendToServer(Socket clientSocket, String command) throws IOException {
+		DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+		if(command.startsWith("post")||(command.startsWith("put"))) {
+			System.out.println("What would you like to put/post? \n >");
+			BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
+			String toPutOrPost = inFromUser.readLine();
+			command += " " + toPutOrPost;
+		}
 		outToServer.writeBytes(command + '\n');
 	}
 

@@ -35,35 +35,49 @@ class Handler implements Runnable {
 	@Override
 	public void run() {
 		try {
-			this.setActive(true);
-			String[] commandPieces = parseCommand(getReader().readLine()
-					.toUpperCase());
-			processCommand(commandPieces);
-			if (Arrays.asList(commandPieces).contains("HTTP/1.0"))
-				this.quit();
+			while (true) {
+				this.setActive(true);
+				String[] commandPieces = parseCommand(getReader().readLine()
+						.toUpperCase());
+				processCommand(commandPieces);
+
+				if (commandPieces == null
+						|| Arrays.asList(commandPieces).contains("HTTP/1.0")) {
+					this.quit();
+					break;
+				}
+			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
 	}
 
 	/**
 	 * The given command is first sliced after a blank character. Then this
-	 * methods checks if the sliced command is a valid command. If the given
-	 * command is not a valid command, this method returns the null-object.
-	 * Otherwise the sliced command is returned.
+	 * methods checks if the sliced command has a valid number of commands. If
+	 * the given command is null, then null is returned.
+	 * 
+	 * Only accepted combinations: method uri port version || method uri version || method uri
 	 * 
 	 * @return
 	 */
 	public String[] parseCommand(String command) {
+		// TODO
+		System.out.println("command dit geparsed moet worden: " + command);
+		if (command == null) {
+			return null;
+		}
 		String[] pieces = filterBlanks(command.split(" "));
-		if (isValidCommand(pieces)) {
+
+		if (howManyValidCommandPieces(pieces) != -1) {
 			if (pieces[1].startsWith("LOCALHOST")) {
-				pieces[1] = pieces[1].replaceFirst("LOCALHOST", "");
+				pieces[1] = pieces[1].replaceFirst("LOCALHOST/", "");
 			}
 			return pieces;
 		} else
 			return null;
+
 	}
 
 	/**
@@ -80,12 +94,17 @@ class Handler implements Runnable {
 	 *             internal error response is send to the client.
 	 */
 	public void processCommand(String[] command) throws IOException {
-		String response = command[3] + " ";
+		String response = "";
 		boolean isValidGet = false;
 
 		if (command == null) {
 			response = getBadRequest();
 		} else {
+			switch(howManyValidCommandPieces(command)){
+			case 2: response = "HTTP/1.1"+ " ";
+			case 3: response = command[2] + " ";
+			case 4: response = command[3] + " ";
+			}
 			try {
 				switch (command[0]) {
 				case "GET":
@@ -148,16 +167,16 @@ class Handler implements Runnable {
 	}
 
 	/**
-	 * Processes the given command. If the given command is not a HEAD, then an
-	 * internal error response is returned. Otherwise the date, content type and
-	 * content length is returned.
+	 * Processes the given command. If the given command is not a HEAD or GET,
+	 * then an internal error response is returned. Otherwise the date, content
+	 * type and content length is returned.
 	 * 
 	 * @param command
 	 * @return
 	 * @throws IOException
 	 */
 	private static String processHead(String[] command) throws IOException {
-		if (!command[0].equals("HEAD")) {
+		if (!(command[0].equals("HEAD") || command[0].equals("GET"))) {
 			return "" + 500 + getTimeAndDate();
 		}
 		Path path = generatePath(command[1]);
@@ -310,7 +329,30 @@ class Handler implements Runnable {
 			if (!arrayToFilter[i].equals(" "))
 				filtered.add(arrayToFilter[i]);
 		}
-		return (String[]) filtered.toArray();
+		return filtered.toArray(new String[filtered.size()]);
+	}
+
+	/**
+	 * True if and only if the first part is a valid http command and the second
+	 * part is a valid uri.
+	 * 
+	 * @param pieces
+	 * @return
+	 */
+	private static boolean isValid2PiecedCommand(String[] pieces) {
+		return isValidHttpCommand(pieces[0]) && isValidUri(pieces[1]);
+	}
+
+	/**
+	 * True if and only if the first part is a valid http command and the second
+	 * part is a valid uri and the third part is a valid http version.
+	 * 
+	 * @param pieces
+	 * @return
+	 */
+	private static boolean isValid3PiecedCommand(String[] pieces) {
+		return isValidHttpCommand(pieces[0]) && isValidUri(pieces[1])
+				&& isValidHttpVersion(pieces[2]);
 	}
 
 	/**
@@ -318,9 +360,24 @@ class Handler implements Runnable {
 	 * the second part a valid uri and the third part a valid port and the last
 	 * part a valid HTTP version.
 	 */
-	public static boolean isValidCommand(String[] command) {
+	private static boolean isValid4PiecedCommand(String[] command) {
 		return isValidHttpCommand(command[0]) && isValidUri(command[1])
 				&& isValidPort(command[2]) && isValidHttpVersion(command[3]);
+	}
+
+	/**
+	 * Returns -1 if and only if the given command does not consists of 2 or 3
+	 * or 4 pieces.
+	 */
+	private static int howManyValidCommandPieces(String[] command) {
+		if (isValid2PiecedCommand(command))
+			return 2;
+		if (isValid3PiecedCommand(command))
+			return 3;
+		if (isValid4PiecedCommand(command))
+			return 4;
+		else
+			return -1;
 	}
 
 	/**
@@ -385,9 +442,16 @@ class Handler implements Runnable {
 	 * @return
 	 */
 	private static String getTimeAndDate() {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		Date date = new Date();
-		return "\n" + dateFormat.format(date);
+		try {
+			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+			Date date = new Date();
+			return "\nDate: " + dateFormat.format(date);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println("Der zit een fout in time en date");
+			return "";
+		}
 	}
 
 	/**

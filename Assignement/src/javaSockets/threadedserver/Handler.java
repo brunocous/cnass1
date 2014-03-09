@@ -34,24 +34,34 @@ class Handler implements Runnable {
 	 */
 	@Override
 	public void run() {
-		try {
-			int i = 0;
-			while (true) {
-				this.setActive(true);
-				// TODO
-				System.out.println("Zoveelste keer run in handler: " + i);
-				String[] commandPieces = parseCommand(getReader().readLine()
+		int i = 0;
+		while (true) {
+			this.setActive(true);
+			String[] commandPieces = null;
+			try {
+				commandPieces = parseCommand(getReader().readLine()
 						.toUpperCase());
-				processCommand(commandPieces);
-
-				if (commandPieces == null
-						|| Arrays.asList(commandPieces).contains("HTTP/1.0")) {
-					this.quit();
-					break;
-				}
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+			try {
+				processCommand(commandPieces);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			if (commandPieces == null
+					|| Arrays.asList(commandPieces).contains("HTTP/1.0")) {
+				try {
+					this.quit();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					System.out.println("probleem bij quiten van server");
+				}
+				break;
+			}
 		}
 
 	}
@@ -67,16 +77,10 @@ class Handler implements Runnable {
 	 * @return
 	 */
 	public String[] parseCommand(String command) {
-		// TODO
-		System.out.println("command dit geparsed moet worden: " + command);
 		if (command == null) {
 			return null;
 		}
 		String[] pieces = filterBlanks(command.split(" "));
-		System.out.println("geparsed command = ");
-		for (String s : pieces) {
-			System.out.println(s);
-		}
 		if (howManyValidCommandPieces(pieces) != -1) {
 			if (pieces[1].startsWith("LOCALHOST")) {
 				pieces[1] = pieces[1].replaceFirst("LOCALHOST/", "");
@@ -105,48 +109,48 @@ class Handler implements Runnable {
 		String response = "";
 		boolean isValidGet = false;
 		// TODO
-		System.out.println("Volgende zal geprocessed worden: ");
-		for (String s : command) {
-			System.out.println(s);
-		}
+		// System.out.println("Volgende zal geprocessed worden: ");
+		// for (String s : command) {
+			
+			//if(s.equals("")) System.out.println("------ gewoon niks");
+			//else System.out.println(s);
+		//}
 		if (command == null) {
 			response = getBadRequest();
 		} else {
 			int i = howManyValidCommandPieces(command);
-			// TODO
-			System.out.println(" number of command: " + i);
 			if (i == 2) {
-				System.out.println("Ik zit in case 2");
 				response = "HTTP/1.1" + " ";
 			}
 			if (i == 3) {
-				System.out.println("Ik zit in case 3");
 				response = command[2] + " ";
 			}
 			if (i == 4) {
-				System.out.println("Ik zit in case 4");
 				response = command[3] + " ";
 			}
 			try {
-				if(command[0].equals("GET")){
-					if (command[1].equals("") || command[2].equals("\\")
-							|| command[2].equals("/")) {
+				if (command[0].equals("GET")) {
+					if (command[1].equals("") || command[1].equals("\\")
+							|| command[1].equals("/")) {
 						command[1] = "INDEX.HTML";
 					}
 					String result = processGet(command);
+					//TODO
+					System.out.println("den URI: "+ command[1]);
+					System.out.println("wa ik terugkrijg van get: " + result);
 					response += result;
 					if (result.startsWith("200")) {
 						isValidGet = true;
 					}
-				}else if(command[0].)
+				} else if (command[0].equals("POST")) {
 					response += processPost(command);
-				case "PUT":
+				} else if (command[0].equals("PUT")) {
 					response += processPut(command);
-				case "HEAD":
+				} else if (command[0].equals("HEAD")) {
 					response += processHead(command);
-				case "QUIT":
+				} else if (command[0].equals("QUIT")) {
 					response += processQuit(command);
-				default:
+				} else {
 					response += getBadRequest();
 				}
 			} catch (IOException e) {
@@ -156,18 +160,41 @@ class Handler implements Runnable {
 
 		DataOutputStream outToClient = new DataOutputStream(this.getSocket()
 				.getOutputStream());
-		outToClient.writeBytes(response);
-
-		if (isValidGet) {
-			int i;
-			FileInputStream inFromFile = new FileInputStream(generatePath(
-					command[1]).toString());
-			while ((i = inFromFile.read()) > -1) {
-				outToClient.write(i);
-			}
-			inFromFile.close();
+		if(isValidGet){
+			//File file = new File(generatePath(command[1]).toString());
+			//byte[] attachement = org.apache.commons.io.FileUtils.readFileToByteArray(file);
+			System.out.println("TE STUREN: " + response +"\n"+ readFile(generatePath(command[1])) + "\n--------");
+			outToClient.writeBytes(response +"\n"+ readFile(generatePath(command[1])));
+		}else{
+			outToClient.writeBytes(response);
 		}
 		outToClient.close();
+//		try {
+//			outToClient.writeBytes(response);
+//			System.out.println("Succesvol: " + "\n-----------\n"+response+"\n---------");
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			System.out.println("Den EERSTE out to client fout");
+//		}
+//
+//		if (isValidGet) {
+//			int i;
+//			FileInputStream inFromFile = new FileInputStream(generatePath(
+//					command[1]).toString());
+//			while ((i = inFromFile.read()) > -1) {
+//				try {
+//					outToClient.write(i);
+//				} catch (Exception e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//					System.out.println("Den TWEEDE out to client fout");
+//					return;
+//				}
+//			}
+//			System.out.println("Succesvol den tweede verstuurd");
+//			inFromFile.close();
+//		}
 
 	}
 
@@ -207,9 +234,8 @@ class Handler implements Runnable {
 		}
 		Path path = generatePath(command[1]);
 		String contentType = "\nContent-Type: " + Files.probeContentType(path);
-		String contentLength = "\nContent-Length: "
-				+ readFile(path).getBytes(Charset.defaultCharset().toString()).length;
-		return 200 + getTimeAndDate() + contentType + contentLength;
+		String contentLength = "\nContent-Length: " + readFile(path).getBytes().length;
+		return 200 + "\nHost: localhost:6789" + getTimeAndDate() + contentType + contentLength;
 
 	}
 
@@ -282,9 +308,12 @@ class Handler implements Runnable {
 
 	/**
 	 * Sets this handler to inactive.
+	 * 
+	 * @throws IOException
 	 */
-	public void quit() {
+	public void quit() throws IOException {
 		this.setActive(false);
+		this.getSocket().close();
 		this.setSocket(null);
 	}
 

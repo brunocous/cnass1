@@ -55,13 +55,11 @@ class Handler implements Runnable {
 			} catch (IOException e2) {
 				// TODO Auto-generated catch block
 				System.out.println("Server kan de stream ni lezen");
-				e2.printStackTrace();
 			}
 			try {
 				processCommand(commandPieces);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
-				e1.printStackTrace();
 			}
 			if (commandPieces != null
 					&& Arrays.asList(commandPieces).contains("HTTP/1.0")) {
@@ -71,7 +69,6 @@ class Handler implements Runnable {
 					break;
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
 					System.out.println("probleem bij quiten van server");
 				}
 			}
@@ -122,13 +119,6 @@ class Handler implements Runnable {
 	public void processCommand(String[] command) throws IOException {
 		String response = "";
 		boolean isValidGet = false;
-		// TODO
-		// System.out.println("Volgende zal geprocessed worden: ");
-		// for (String s : command) {
-			
-			//if(s.equals("")) System.out.println("------ gewoon niks");
-			//else System.out.println(s);
-		//}
 		if (command == null) {
 			response = getBadRequest();
 		} else {

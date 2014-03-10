@@ -180,6 +180,8 @@ public class HTTPClient2 {
 	
 	/**
 	 * Processes the response of the server and requests images that are embedded in the html page.
+	 * There are separated cases for the HTTP 1.0 and 1.1. The sockets are always immediately closed 
+	 * using HTTP 1.0.
 	 * 
 	 * @param response
 	 *            The string that the server responded

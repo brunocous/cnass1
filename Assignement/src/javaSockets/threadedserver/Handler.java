@@ -34,15 +34,27 @@ class Handler implements Runnable {
 	 */
 	@Override
 	public void run() {
+		BufferedReader reader = null;
+		try {
+			reader = getReader();
+		} catch (IOException e3) {
+			// TODO Auto-generated catch block
+			System.out.println("Reader ni leesbaar.");
+			e3.printStackTrace();
+			return;
+		}
 		int i = 0;
-		while (true) {
+		while(true){
+			//TODO
+			System.out.println("De " + i + "de keer da em doorloop in deze thread: " + this.toString());
 			this.setActive(true);
 			String[] commandPieces = null;
 			try {
-				commandPieces = parseCommand(getReader().readLine()
+				commandPieces = parseCommand(reader.readLine()
 						.toUpperCase());
 			} catch (IOException e2) {
 				// TODO Auto-generated catch block
+				System.out.println("Server kan de stream ni lezen");
 				e2.printStackTrace();
 			}
 			try {
@@ -51,17 +63,19 @@ class Handler implements Runnable {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			if (commandPieces == null
-					|| Arrays.asList(commandPieces).contains("HTTP/1.0")) {
+			if (commandPieces != null
+					&& Arrays.asList(commandPieces).contains("HTTP/1.0")) {
 				try {
+					this.getSocket().close();
 					this.quit();
+					break;
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 					System.out.println("probleem bij quiten van server");
 				}
-				break;
 			}
+			i++;
 		}
 
 	}
@@ -164,37 +178,16 @@ class Handler implements Runnable {
 			//File file = new File(generatePath(command[1]).toString());
 			//byte[] attachement = org.apache.commons.io.FileUtils.readFileToByteArray(file);
 			System.out.println("TE STUREN: " + response +"\n"+ readFile(generatePath(command[1])) + "\n--------");
-			outToClient.writeBytes(response +"\n"+ readFile(generatePath(command[1])));
+			try {
+				outToClient.writeBytes(response +"\n"+ readFile(generatePath(command[1])));
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				System.out.println(" ----   fout bij versturen van header en file");
+				e.printStackTrace();
+			}
 		}else{
 			outToClient.writeBytes(response);
 		}
-		outToClient.close();
-//		try {
-//			outToClient.writeBytes(response);
-//			System.out.println("Succesvol: " + "\n-----------\n"+response+"\n---------");
-//		} catch (Exception e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//			System.out.println("Den EERSTE out to client fout");
-//		}
-//
-//		if (isValidGet) {
-//			int i;
-//			FileInputStream inFromFile = new FileInputStream(generatePath(
-//					command[1]).toString());
-//			while ((i = inFromFile.read()) > -1) {
-//				try {
-//					outToClient.write(i);
-//				} catch (Exception e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//					System.out.println("Den TWEEDE out to client fout");
-//					return;
-//				}
-//			}
-//			System.out.println("Succesvol den tweede verstuurd");
-//			inFromFile.close();
-//		}
 
 	}
 
@@ -211,7 +204,7 @@ class Handler implements Runnable {
 			return "" + 500 + getTimeAndDate();
 		}
 		try {
-			this.getSocket().close();
+			this.quit();
 			return "" + getTimeAndDate();
 		} catch (IOException e) {
 			return "" + 500;
@@ -313,7 +306,6 @@ class Handler implements Runnable {
 	 */
 	public void quit() throws IOException {
 		this.setActive(false);
-		this.getSocket().close();
 		this.setSocket(null);
 	}
 

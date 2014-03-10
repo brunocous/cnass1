@@ -2,10 +2,8 @@ package javaSockets.client;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 
-import org.apache.commons.io.IOUtils;
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,40 +18,23 @@ public class HTTPClient2 {
 	 * @throws Exception
 	 */
 	public static void main(String argv[]) throws Exception {
-		System.out.println("Client. Please provide <HTTP Method> <URI> <PORT> <HTTP Version>");
 		while (true) {
+			System.out.println("Welcome to the HTTP client, \n >");
 			String userCommand = readUserCommand();
-			String[] commandWords = parseCommand(userCommand);
-			String uri = getUriFromCommand(commandWords);
-			String host = uri.split("/")[0];
-			int port = getPortFromCommand(commandWords);
-			
-			// String HTTPVersion = getHttpFromCommand(commandWords);
-			Socket clientSocket;
-			try {
-				clientSocket = createSocket(host, port);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.out.println("socket creëren is mislukt......");
-				return;
+			if(userCommand.equals("")) {
+				System.out.println("No command was given.");
 			}
-			sendToServer(clientSocket, userCommand);
-
-			processResponse(receiveResponse(clientSocket), clientSocket,
-					commandWords);
+			else {
+				String[] commandWords = parseCommand(userCommand);
+				String uri = getUriFromCommand(commandWords);
+				String host = uri.split("/")[0];
+				int port = getPortFromCommand(commandWords);
+				Socket clientSocket = createSocket(host, port);
+				sendToServer(clientSocket, userCommand);
+				processResponse(receiveResponse(clientSocket), clientSocket,
+					commandWords, host);
+			}
 		}
-		// Socket clientSocket = new Socket("localhost", 6789);
-		// DataOutputStream outToServer = new DataOutputStream(
-		// clientSocket.getOutputStream());
-		// BufferedReader inFromServer = new BufferedReader(new
-		// InputStreamReader(
-		// clientSocket.getInputStream()));
-		// String sentence = inFromUser.readLine();
-		// outToServer.writeBytes(sentence + '\n');
-		// String modifiedSentence = inFromServer.readLine();
-		// System.out.println("FROM SERVER: " + modifiedSentence);
-		// clientSocket.close();
 	}
 
 	/**
@@ -143,8 +124,8 @@ public class HTTPClient2 {
 	 */
 	public static void sendToServer(Socket clientSocket, String command) throws IOException {
 		DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-		if(command.toUpperCase().startsWith("POST")||(command.toUpperCase().startsWith("PUT"))) {
-			System.out.println("What would you like to put/post?");
+		if(command.startsWith("post")||(command.startsWith("put"))) {
+			System.out.println("What would you like to put/post? \n >");
 			BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 			String toPutOrPost = inFromUser.readLine();
 			command += " " + toPutOrPost;
@@ -178,12 +159,10 @@ public class HTTPClient2 {
 	 * @throws IOException
 	 */
 	public static String receiveResponse(Socket socket) throws IOException {
-		StringWriter writer = new StringWriter();
-		IOUtils.copy(socket.getInputStream(), writer, Charset.defaultCharset());
-		String theString = writer.toString();
-		//TODO
-		System.out.println("Dit krijg ik rechtstreeks van de readline: " + theString);
-		return theString;
+		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
+				socket.getInputStream()));
+		String sentence = inFromServer.readLine();
+		return sentence;
 	}
 
 	/**
@@ -206,22 +185,24 @@ public class HTTPClient2 {
 	 *            The string that the server responded
 	 * @throws IOException
 	 */
-	public static void processResponse(String response, Socket socket, String[] commandWords) throws IOException {
-		System.out.println("Dees is wa process in client krijgt: " + response);
+	public static void processResponse(String response, Socket socket, String[] commandWords, String host) throws IOException {
+		System.out.println(response);
 		if(response.startsWith("HTTP/1.0")) {
+			int port = socket.getPort();
 			socket.close();
 			String[] urls = getUrls(response);
 			int i = 0;
 			for(String url : urls) {
-				Socket newSocket = createSocket("localhost", 6789);
-				String command = "GET " + url + " " + newSocket.getPort() + " " + getHttpFromCommand(commandWords);
+				Socket newSocket = createSocket(host, port);
+				String command = "GET " + url + " HTTP/1.0";
 				sendToServer(newSocket, command);
 				System.out.println("Image requested.");
-				String image = receiveResponse(newSocket);
+				String image = receiveEmbeddedObjects(newSocket);
 				PrintWriter out = new PrintWriter("image" + i + ".txt");
 				i++;
+				out.println(image);
 				out.close();
-				System.out.println(image);
+				// System.out.println(image);
 				newSocket.close();
 			}
 		}
@@ -229,10 +210,10 @@ public class HTTPClient2 {
 			String[] urls = getUrls(response);
 			int j = 0;
 			for(String url : urls) {
-				String command = "GET " + url + " " + socket.getPort() + " " + getHttpFromCommand(commandWords);
+				String command = "GET " + url + " HTTP/1.1";
 				sendToServer(socket, command);
 				System.out.println("Image requested.");
-				String imageString = receiveResponse(socket);
+				String imageString = receiveEmbeddedObjects(socket);
 				PrintWriter out = new PrintWriter("image" + j + ".txt");
 				out.println(imageString);
 				out.close();

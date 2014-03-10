@@ -14,7 +14,7 @@ import org.jsoup.select.Elements;
 public class HTTPClient2 {
 
 	/**
-	 * Executes the program
+	 * Executes the client program
 	 * 
 	 * @param argv
 	 * @throws Exception
@@ -46,7 +46,7 @@ public class HTTPClient2 {
 	}
 
 	/**
-	 * Cuts the command in separate words
+	 * Cuts the command in separate words and returns an array with the pieces
 	 * 
 	 * @param command
 	 * @return Array with the words
@@ -91,6 +91,9 @@ public class HTTPClient2 {
 
 	/**
 	 * Returns the port number of the command of the client
+	 * 
+	 * @param
+	 * @return
 	 */
 	public static int getPortFromCommand(String[] userCommand) {
 		int value;
@@ -103,7 +106,7 @@ public class HTTPClient2 {
 	}
 
 	/**
-	 * Reads the input form the user.
+	 * Reads the input form the user and returns it in a string.
 	 * 
 	 * @return
 	 * @throws IOException
@@ -127,6 +130,7 @@ public class HTTPClient2 {
 
 	/**
 	 * Sends the given command through the clientsocket to the server.
+	 * It uses a dataoutputstream and checks for the additional information for the put and post methods.
 	 * 
 	 * @throws IOException
 	 */
@@ -159,7 +163,7 @@ public class HTTPClient2 {
 	}
 
 	/**
-	 * Receives and returns the response from the server.
+	 * Receives and returns the response from the server in a string.
 	 * 
 	 * @param socket
 	 *            The socket of the connection
@@ -173,21 +177,9 @@ public class HTTPClient2 {
 		return theString;
 	}
 
-	/**
-	 * Returns the embedded objects that are requested.
-	 * 
-	 * @param socket
-	 * @throws IOException
-	 */
-	public static String receiveEmbeddedObjects(Socket socket) throws IOException {
-		DataInputStream dis = new DataInputStream(socket.getInputStream());
-		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(dis));
-		String sentence = inFromServer.readLine();
-		return sentence;
-	}
 	
 	/**
-	 * Processes the response of the server and reacts appropriately
+	 * Processes the response of the server and requests images that are embedded in the html page.
 	 * 
 	 * @param response
 	 *            The string that the server responded
